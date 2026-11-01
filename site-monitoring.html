@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071a24">
+<title>Site Monitoring · World Heritage Atlas</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--ink:#102a36;--muted:#66808a;--line:#dce8e5;--paper:#f6faf8;--green:#087f67;--mint:#e0f4ed;--navy:#071a24;--amber:#bd7a25}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}.shell{max-width:1440px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-size:11px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}.top a{color:var(--green);text-decoration:none;font-size:13px}.hero{background:white;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:16px}.eyebrow{font:10px/1.4 ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}h1{font-size:clamp(25px,4vw,39px);letter-spacing:-.045em;line-height:1.1;margin:8px 0 6px}.location{color:var(--muted);margin:0}.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chip{background:var(--mint);border-radius:7px;padding:5px 9px;font-size:11px;color:#246958}.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}.controls label{font-size:12px;color:var(--muted)}select,button{font:inherit;border:1px solid var(--line);border-radius:9px;background:#fff;padding:9px 12px;color:var(--ink)}button.primary{background:var(--green);color:white;border-color:var(--green);font-weight:650;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}#map{height:min(68vh,720px);min-height:480px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#e9f0ed}.side{display:flex;flex-direction:column;gap:12px}.panel{background:white;border:1px solid var(--line);border-radius:15px;padding:15px}.panel h2{font-size:16px;margin:0 0 8px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#f5f9f7;border-radius:10px;padding:10px}.stat b{display:block;font-size:23px}.stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.status{font-size:12px;color:var(--muted)}.camera{border-top:1px solid var(--line);padding:11px 0}.camera:first-child{border-top:0}.camera strong{display:block;font-size:13px}.camera small{display:block;color:var(--muted);font-size:11px}.camera a{color:var(--green);font-size:12px;text-decoration:none}.camera img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin-top:7px}.notice{font-size:11px;color:var(--muted);background:#fff8e9;padding:10px;border-radius:9px}.legend{display:flex;gap:13px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:10px 0}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:#07856d}.dot.site{background:#bd7a25}.footer{margin:15px 0;color:var(--muted);font-size:11px}.leaflet-popup-content{font-family:inherit}.leaflet-popup-content a{color:var(--green)}@media(max-width:850px){.shell{padding:13px}.layout{grid-template-columns:1fr}#map{min-height:420px;height:55vh}.side{display:grid;grid-template-columns:1fr}.top{align-items:flex-start}}
+</style></head>
+<body><main class="shell">
+<header class="top"><span class="brand">World Heritage Atlas / Site Monitoring</span><a href="./index.html">← Back to Explorer</a></header>
+<section class="hero">
+ <div class="eyebrow">FIELD MONITORING · PUBLIC CAMERA DISCOVERY</div>
+ <h1 id="siteName">Loading selected site…</h1><p class="location" id="siteLocation">Resolving site coordinates</p>
+ <div class="meta"><span class="chip" id="siteProgramme">UNESCO-designated site</span><span class="chip" id="radiusChip">Search radius · 200 km max</span><span class="chip" id="coordChip">Coordinates pending</span></div>
+ <div class="controls"><label for="radius">Search radius</label><select id="radius"><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option><option value="150">150 km</option><option value="200" selected>200 km (maximum)</option></select><button class="primary" id="scanBtn">↻ Scan public camera database</button><span id="scanStatus" class="status" aria-live="polite">Preparing map…</span></div>
+</section>
+<div class="layout"><section><div id="map" aria-label="Map of the selected site and public camera records"></div><div class="legend"><span><i class="dot site"></i>Selected heritage site</span><span><i class="dot"></i>Public camera record</span></div></section>
+<aside class="side">
+ <section class="panel"><h2>Monitoring area</h2><div class="stats"><div class="stat"><b id="cameraCount">—</b><span>Camera records</span></div><div class="stat"><b id="radiusValue">200 km</b><span>Search radius</span></div></div><p class="status" id="coverageText">Camera records are being loaded from the public database.</p></section>
+ <section class="panel"><h2>Public cameras nearby</h2><div id="cameraList" class="status">No results loaded yet.</div></section>
+ <section class="panel"><h2>Data sources</h2><p class="status">OpenSurveillanceDB provides public camera location records (not necessarily live video). A record's coordinates indicate its reported camera location; availability and freshness may vary.</p><p><a href="https://opensurveillancedb.org/" target="_blank" rel="noopener">OpenSurveillanceDB ↗</a></p><p class="status">Webcam previews can be added through providers such as OpenWebcamDB or Windy with their required API credentials.</p></section>
+ <div class="notice">This page is for place-based situational awareness: environmental conditions, infrastructure and public-area context. It does not identify or follow individuals. Camera locations do not prove that a camera is online or that an event occurred.</div>
+</aside></div>
+<footer class="footer">Camera data: OpenSurveillanceDB · Map: © OpenStreetMap contributors · Distances are calculated from the selected site's coordinate anchor, not an official property boundary.</footer>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(()=>{
+"use strict";
+const qs=new URLSearchParams(location.search);
+const params={id:qs.get("id")||"",name:qs.get("name")||"Selected site",country:qs.get("country")||"",location:qs.get("location")||"",programme:qs.get("programme")||"UNESCO-designated site",lon:Number(qs.get("lon")),lat:Number(qs.get("lat"))};
+const valid=Number.isFinite(params.lat)&&Number.isFinite(params.lon)&&Math.abs(params.lat)<=90&&Math.abs(params.lon)<=180;
+const $=id=>document.getElementById(id);
+$("siteName").textContent=params.name;
+$("siteLocation").textContent=params.location||params.country||"Location not specified";
+$("siteProgramme").textContent=params.programme;
+if(valid)$("coordChip").textContent=params.lat.toFixed(4)+"°, "+params.lon.toFixed(4)+"°";
+const map=L.map("map",{scrollWheelZoom:true}).setView(valid?[params.lat,params.lon]:[-7.6079,110.2038],valid?8:5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+if(valid){
+ L.marker([params.lat,params.lon],{title:params.name}).addTo(map).bindPopup("<strong>"+escapeHtml(params.name)+"</strong><br>Selected heritage site").openPopup();
+}
+let layer=L.layerGroup().addTo(map);
+const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function distanceKm(lat1,lon1,lat2,lon2){const r=Math.PI/180,dLat=(lat2-lat1)*r,dLon=(lon2-lon1)*r,a=Math.sin(dLat/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLon/2)**2;return 6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+function cameraCoords(feature){const p=feature.properties||feature;const g=feature.geometry;let lon=Number(p.longitude??p.lon??(g&&g.coordinates&&g.coordinates[0])),lat=Number(p.latitude??p.lat??(g&&g.coordinates&&g.coordinates[1]));return Number.isFinite(lat)&&Number.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180?{lat,lon}:null}
+function normalizeRows(payload){if(Array.isArray(payload.features))return payload.features;if(Array.isArray(payload.data))return payload.data;if(Array.isArray(payload.cameras))return payload.cameras;if(Array.isArray(payload.data?.features))return payload.data.features;return []}
+async function scan(){
+ if(!valid){$("scanStatus").textContent="This site has no valid coordinates. Camera search cannot start.";return}
+ const radius=Math.min(200,Math.max(1,Number($("radius").value)||200));
+ $("radiusChip").textContent="Search radius · "+radius+" km";$("radiusValue").textContent=radius+" km";$("scanBtn").disabled=true;$("scanStatus").textContent="Querying public camera records…";$("cameraList").textContent="Loading…";layer.clearLayers();
+ const dLat=radius/111.32,dLon=radius/(111.32*Math.max(.1,Math.cos(params.lat*Math.PI/180)));
+ const bbox=[params.lon-dLon,params.lat-dLat,params.lon+dLon,params.lat+dLat].join(",");
+ try{
+  const url="https://opensurveillancedb.org/api/cameras?bbox="+encodeURIComponent(bbox)+"&count=false";
+  const response=await fetch(url,{headers:{Accept:"application/json"}});
+  if(!response.ok)throw new Error("OpenSurveillanceDB returned HTTP "+response.status);
+  const payload=await response.json(),raw=normalizeRows(payload),rows=raw.map(row=>{const coords=cameraCoords(row);if(!coords)return null;const p=row.properties||row;return {...p,...coords,distance:distanceKm(params.lat,params.lon,coords.lat,coords.lon)}}).filter(x=>x&&x.distance<=radius).sort((a,b)=>a.distance-b.distance).slice(0,500);
+  rows.forEach((cam,i)=>{
+   const title=cam.title||cam.name||cam.label||("Public camera #"+(cam.id??i+1)),kind=cam.kind||cam.type||cam.mount||"Public camera record",id=cam.id;
+   const marker=L.circleMarker([cam.lat,cam.lon],{radius:6,color:"#087f67",weight:2,fillColor:"#0ca789",fillOpacity:.85}).addTo(layer);
+   const external=id?"https://opensurveillancedb.org/cameras/"+encodeURIComponent(id):"https://opensurveillancedb.org/";
+   marker.bindPopup("<strong>"+escapeHtml(title)+"</strong><br>"+escapeHtml(kind)+"<br>"+cam.distance.toFixed(1)+" km from site<br><a target='_blank' rel='noopener' href='"+external+"'>Open public record ↗</a>");
+  });
+  $("cameraCount").textContent=rows.length;$("coverageText").textContent=rows.length?("Found "+rows.length+" public camera records within "+radius+" km. Results are distance-filtered from the site's anchor coordinate."):("No matching public camera records were returned in this radius. This does not mean no cameras exist.");
+  $("scanStatus").textContent="Scan complete · "+new Date().toLocaleTimeString();
+  $("cameraList").innerHTML=rows.length?rows.slice(0,40).map(cam=>{const title=cam.title||cam.name||cam.label||("Camera #"+(cam.id??"—")),kind=cam.kind||cam.type||cam.mount||"Camera record",url=cam.id?"https://opensurveillancedb.org/cameras/"+encodeURIComponent(cam.id):"https://opensurveillancedb.org/";return "<div class='camera'><strong>"+escapeHtml(title)+"</strong><small>"+escapeHtml(kind)+" · "+cam.distance.toFixed(1)+" km away</small><a href='"+url+"' target='_blank' rel='noopener'>Open public record ↗</a></div>"}).join(""):"No public camera records were found in the selected radius.";
+  if(rows.length){const bounds=L.latLngBounds([[params.lat,params.lon],...rows.map(x=>[x.lat,x.lon])]);map.fitBounds(bounds.pad(.12),{maxZoom:11})}else map.setView([params.lat,params.lon],9);
+  if(payload.nextOffset!==undefined&&payload.nextOffset!==null)$("coverageText").textContent+=" The source is paginated; this view shows the first returned page.";
+ }catch(error){$("scanStatus").textContent="Camera database unavailable";$("cameraList").textContent=error.message+" — try again later or open the source map."; $("coverageText").textContent="No camera data could be loaded. The selected site remains visible on the map."}
+ finally{$("scanBtn").disabled=false}
+}
+$("scanBtn").addEventListener("click",scan);$("radius").addEventListener("change",()=>{if(valid)scan()});
+if(!valid){$("scanStatus").textContent="Missing site coordinates. Return to the Explorer and select a mapped site.";$("scanBtn").disabled=true}
+else scan();
+function openPopupForHash(){if(qs.get("camera")){/* Camera deep-link placeholder for future detail provider */}}
+})();
+</script></body></html>
