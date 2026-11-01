@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "baselineInitialized": true,
-  "checkedAt": "2026-10-17T15:16:27+00:00",
-  "forcedRun": true,
+  "checkedAt": "2026-11-01T11:23:54+00:00",
+  "forcedRun": false,
   "canonicalDirectory": "assets/models",
   "assets": {
     "assets/models/african_hut.glb": {
@@ -21,8 +21,8 @@
       "validGlb": true
     },
     "assets/models/borobudur_temple.glb": {
-      "sha256": "b385e333b403c8884d501544495e4eda6b02f11b1ffc3062006cf2fc7bd8a29e",
-      "sizeBytes": 2379592,
+      "sha256": "4cce5c17e100277a1497b8d0a1890f0319879bc380765e660c0b990403eb587a",
+      "sizeBytes": 5454676,
       "validGlb": true
     },
     "assets/models/classical_statue.glb": {
@@ -33,6 +33,21 @@
     "assets/models/egyptian_head.glb": {
       "sha256": "e6b611bfb1d2265e854f0b097744ece73622923fc6376a942cb7e083e9cda87e",
       "sizeBytes": 14204616,
+      "validGlb": true
+    },
+    "assets/models/komodo_dragon.glb": {
+      "sha256": "6a39c91ad54e2c0b01f17cd6c05c264de4e0acc53ec165a54ab36777bc7c1392",
+      "sizeBytes": 6139136,
+      "validGlb": true
+    },
+    "assets/models/komodo_island.glb": {
+      "sha256": "3c231d431240a29fd7ebb17016677b3a1104fb1971243a7cb9c629b2211edf1b",
+      "sizeBytes": 14913384,
+      "validGlb": true
+    },
+    "assets/models/prambanan_temple.glb": {
+      "sha256": "fe32357536de0104ad20335e629a1955259226424c092d75f8eab591ff7fe5db",
+      "sizeBytes": 867204,
       "validGlb": true
     },
     "assets/models/school_building.glb": {
