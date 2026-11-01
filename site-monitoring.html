@@ -17,15 +17,15 @@
  <div class="meta"><span class="chip" id="siteProgramme">UNESCO-designated site</span><span class="chip" id="radiusChip">Search radius · 200 km max</span><span class="chip" id="coordChip">Coordinates pending</span></div>
  <div class="controls"><label for="radius">Search radius</label><select id="radius"><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option><option value="150">150 km</option><option value="200" selected>200 km (maximum)</option></select><button class="primary" id="scanBtn">↻ Scan public camera database</button><span id="scanStatus" class="status" aria-live="polite">Preparing map…</span></div>
 </section>
-<div class="layout"><section><div id="map" aria-label="Map of the selected site and public camera records"></div><div class="legend"><span><i class="dot site"></i>Selected heritage site</span><span><i class="dot"></i>Public camera infrastructure record</span><span><i class="dot webcam-dot"></i>Live public webcam</span></div></section>
+<div class="layout"><section><div id="map" aria-label="Map of the selected site and public camera records"></div><div class="legend"><span><i class="dot site"></i>Selected heritage site</span><span><i class="dot"></i>Public camera infrastructure record</span><span><i class="dot webcam-dot"></i>OSIRIS public CCTV / webcam feed</span></div></section>
 <aside class="side">
  <section class="panel"><h2>Monitoring area</h2><div class="stats"><div class="stat"><b id="cameraCount">—</b><span>Camera records</span></div><div class="stat"><b id="radiusValue">200 km</b><span>Search radius</span></div></div><p class="status" id="coverageText">Camera records are being loaded from the public database.</p></section>
  <section class="panel"><h2>Public camera infrastructure records nearby</h2><div id="cameraList" class="status">No results loaded yet.</div></section>
- <section class="panel"><h2>Live public webcams</h2><p class="status" id="webcamStatus">Checking public webcam availability…</p><div id="webcamList" class="status">Loading public webcams…</div><div id="streamPanel" hidden><h3 id="streamTitle" style="font-size:14px;margin:12px 0 6px"></h3><div id="streamPlayer" class="stream-player"><div class="empty">Select a public webcam to load its stream.</div></div><p class="status" id="streamAttribution"></p></div></section>
- <section class="panel"><h2>Data sources</h2><p class="status">OpenSurveillanceDB provides public records of visible camera infrastructure only. It does not provide video, live streams or stream URLs. A record indicates a reported camera location; availability and freshness may vary.</p><p><a href="https://opensurveillancedb.org/" target="_blank" rel="noopener">OpenSurveillanceDB ↗</a></p><p class="status">Live public webcam listings and stream details are supplied by OpenWebcamDB when its API key is configured. Only feeds explicitly published for public viewing are shown; playback depends on the original publisher being online and allowing embedding.</p></section>
+ <section class="panel"><h2>OSIRIS public CCTV & webcams</h2><p class="status" id="webcamStatus">Checking public webcam availability…</p><div id="webcamList" class="status">Loading public webcams…</div><div id="streamPanel" hidden><h3 id="streamTitle" style="font-size:14px;margin:12px 0 6px"></h3><div id="streamPlayer" class="stream-player"><div class="empty">Select a public webcam to load its stream.</div></div><p class="status" id="streamAttribution"></p></div></section>
+ <section class="panel"><h2>Data sources</h2><p class="status">OpenSurveillanceDB provides public records of visible camera infrastructure only. It does not provide video, live streams or stream URLs. A record indicates a reported camera location; availability and freshness may vary.</p><p><a href="https://opensurveillancedb.org/" target="_blank" rel="noopener">OpenSurveillanceDB ↗</a></p><p class="status">OSIRIS aggregates publicly published camera feeds from transport agencies and public webcam catalogues. Depending on the operator, a camera may provide live video, an embedded public player, or a refreshing still image. Feed availability and embedding permissions remain controlled by the original publisher.</p></section>
  <div class="notice">This page is for place-based situational awareness: environmental conditions, infrastructure and public-area context. It does not identify or follow individuals. Camera locations do not prove that a camera is online or that an event occurred.</div>
 </aside></div>
-<footer class="footer">Infrastructure data: OpenSurveillanceDB · Live webcam directory: OpenWebcamDB · Map: © OpenStreetMap contributors · Distances are calculated from the selected site's coordinate anchor, not an official property boundary.</footer>
+<footer class="footer">Infrastructure data: OpenSurveillanceDB · Public CCTV catalogue: OSIRIS · Map: © OpenStreetMap contributors · Distances are calculated from the selected site's coordinate anchor, not an official property boundary.</footer>
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -78,54 +78,52 @@ const webcamLayer=L.layerGroup().addTo(map);
 async function scanWebcams(){
  if(!valid)return;
  const radius=Math.min(200,Math.max(1,Number($("radius").value)||200));
- $("webcamStatus").textContent="Searching public live webcam directory…";
- $("webcamList").textContent="Loading public webcam listings…";
+ $("webcamStatus").textContent="Searching OSIRIS public camera catalogue…";
+ $("webcamList").textContent="Loading public camera feeds…";
  $("streamPanel").hidden=true;webcamLayer.clearLayers();
- const dLat=radius/111.32,dLon=radius/(111.32*Math.max(.1,Math.cos(params.lat*Math.PI/180)));
- const bbox=[params.lon-dLon,params.lat-dLat,params.lon+dLon,params.lat+dLat].join(",");
  try{
-  const response=await fetch("https://civilaegis-tinyfish-proxy.conniezz-cool.workers.dev/public-webcams?bbox="+encodeURIComponent(bbox),{headers:{Accept:"application/json"}});
+  const endpoint="https://civilaegis-tinyfish-proxy.conniezz-cool.workers.dev/osiris-cctv?lat="+encodeURIComponent(params.lat)+"&lng="+encodeURIComponent(params.lon)+"&radius="+encodeURIComponent(radius);
+  const response=await fetch(endpoint,{headers:{Accept:"application/json"}});
   const payload=await response.json();
-  if(response.status===503&&payload.status==="not_configured"){$("webcamStatus").textContent="Webcam provider setup required.";$("webcamList").textContent=payload.message||"Configure OPENWEBCAMDB_API_KEY in the Cloudflare Worker.";return}
-  if(!response.ok)throw new Error(payload.message||payload.error||("HTTP "+response.status));
-  const raw=Array.isArray(payload)?payload:(payload.data||payload.webcams||payload.results||[]);
-  const rows=raw.map(item=>{const lat=Number(item.latitude??item.lat),lon=Number(item.longitude??item.lng??item.lon);if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return null;return {...item,lat,lon,distance:distanceKm(params.lat,params.lon,lat,lon)}}).filter(x=>x&&x.distance<=radius).sort((a,b)=>a.distance-b.distance);
-  rows.slice(0,150).forEach((cam,i)=>{
-   const title=cam.title||cam.name||("Public webcam "+(i+1));
-   const marker=L.circleMarker([cam.lat,cam.lon],{radius:7,color:"#6741a5",weight:2,fillColor:"#9a7be0",fillOpacity:.95}).addTo(webcamLayer);
-   marker.bindPopup("<strong>"+escapeHtml(title)+"</strong><br>"+escapeHtml(cam.city||cam.country?.name||"Public webcam")+"<br>"+cam.distance.toFixed(1)+" km from site");
+  if(!response.ok)throw new Error(payload.error||("OSIRIS returned HTTP "+response.status));
+  const raw=Array.isArray(payload.cameras)?payload.cameras:[];
+  const rows=raw.map((cam,index)=>{const lat=Number(cam.lat),lon=Number(cam.lng??cam.lon);if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return null;return {...cam,_key:String(cam.id||cam.name||index),distance:distanceKm(params.lat,params.lon,lat,lon)}}).filter(cam=>cam&&cam.distance<=radius).sort((x,y)=>x.distance-y.distance);
+  rows.slice(0,500).forEach(cam=>{
+   const marker=L.circleMarker([cam.lat,cam.lng??cam.lon],{radius:7,color:"#6741a5",weight:2,fillColor:"#9a7be0",fillOpacity:.95}).addTo(webcamLayer);
+   marker.bindPopup("<strong>"+escapeHtml(cam.name||"Public camera")+"</strong><br>"+escapeHtml([cam.city,cam.country].filter(Boolean).join(", "))+"<br>"+cam.distance.toFixed(1)+" km · "+escapeHtml(cam.source||"OSIRIS"));
    marker.on("click",()=>loadWebcam(cam));
   });
-  $("webcamStatus").textContent=rows.length?("Found "+rows.length+" public webcams within "+radius+" km. Select one to load its stream."):"No public webcam listings were found within this radius.";
-  $("webcamList").innerHTML=rows.length?rows.slice(0,30).map((cam,i)=>{const slug=String(cam.slug||"");const title=cam.title||cam.name||("Public webcam "+(i+1));const city=cam.city||cam.country?.name||"Location not specified";const thumb=cam.thumbnail_url||cam.thumbnailUrl||"";const permalink=cam.permalink||"https://openwebcamdb.com/";return "<div class='webcam'><strong>"+escapeHtml(title)+"</strong><small>"+escapeHtml(city)+" · "+cam.distance.toFixed(1)+" km away · "+escapeHtml(cam.stream_type||"Public stream")+"</small>"+(thumb?"<img loading='lazy' src='"+escapeHtml(thumb)+"' alt='Public webcam preview'>":"")+"<button type='button' data-webcam-slug='"+escapeHtml(slug)+"' "+(!slug?"disabled":"")+">▶ View public stream</button> <a href='"+escapeHtml(permalink)+"' target='_blank' rel='noopener'>Source ↗</a></div>"}).join(""):"No public webcam feeds are listed in the selected radius.";
-  $("webcamList").querySelectorAll("[data-webcam-slug]").forEach(button=>button.addEventListener("click",()=>{const cam=rows.find(x=>String(x.slug)===button.dataset.webcamSlug);if(cam)loadWebcam(cam)}));
- }catch(error){$("webcamStatus").textContent="Public webcam directory unavailable.";$("webcamList").textContent=error.message}
+  $("webcamStatus").textContent=rows.length?("Found "+rows.length+" public camera feeds within "+radius+" km. Select a marker or camera below."):("OSIRIS returned no public camera feeds within "+radius+" km.");
+  $("webcamList").innerHTML=rows.length?rows.slice(0,50).map(cam=>{const title=cam.name||"Public camera";const place=[cam.city,cam.country].filter(Boolean).join(", ");const kind=cam.stream_type|| (cam.feed_url?"Snapshot":"Camera record");const hasFeed=!!(cam.stream_url||cam.feed_url);return "<div class=\"webcam\"><strong>"+escapeHtml(title)+"</strong><small>"+escapeHtml(place||"Location not specified")+" · "+cam.distance.toFixed(1)+" km · "+escapeHtml(kind)+" · "+escapeHtml(cam.source||"OSIRIS")+"</small><button type=\"button\" data-osiris-camera=\""+escapeHtml(cam._key)+"\" "+(!hasFeed?"disabled":"")+">▶ View public feed</button></div>"}).join(""):"No public CCTV/webcam feeds were returned for this site and radius. The camera catalogue may have limited regional coverage.";
+  $("webcamList").querySelectorAll("[data-osiris-camera]").forEach(button=>button.addEventListener("click",()=>{const cam=rows.find(item=>item._key===button.dataset.osirisCamera);if(cam)loadWebcam(cam)}));
+ }catch(error){$("webcamStatus").textContent="OSIRIS camera catalogue unavailable.";$("webcamList").textContent=error.message}
 }
 async function loadWebcam(cam){
- const title=cam.title||cam.name||"Public webcam";
- $("streamPanel").hidden=false;$("streamTitle").textContent=title;$("streamPlayer").replaceChildren();
- $("streamPlayer").innerHTML="<div class='empty'>Loading public stream details…</div>";
- $("streamAttribution").textContent=cam.attribution||"Public feed listed by OpenWebcamDB. Availability and embedding are controlled by the original publisher.";
+ const title=cam.name||"Public camera";
+ $("streamPanel").hidden=false;$("streamTitle").textContent=title;
+ const player=$("streamPlayer");player.replaceChildren();player.innerHTML="<div class=\"empty\">Loading public camera feed…</div>";
+ $("streamAttribution").textContent=(cam.source||"OSIRIS public camera catalogue")+" · Stream availability and embedding are controlled by the original operator.";
  try{
-  const response=await fetch("https://civilaegis-tinyfish-proxy.conniezz-cool.workers.dev/public-webcams/stream?slug="+encodeURIComponent(cam.slug),{headers:{Accept:"application/json"}});
-  const payload=await response.json();if(!response.ok)throw new Error(payload.message||payload.error||("HTTP "+response.status));
-  const item=payload.data||payload.webcam||payload;const streamUrl=String(item.stream_url||item.streamUrl||"");const parsed=new URL(streamUrl);
-  if(parsed.protocol!=="https:")throw new Error("The provider did not supply a secure HTTPS stream.");
-  const type=String(item.stream_type||cam.stream_type||"").toLowerCase();const player=$("streamPlayer");player.replaceChildren();
-  if(type==="youtube"||parsed.hostname.includes("youtube.com")||parsed.hostname==="youtu.be"){
-   let embed=streamUrl;const id=parsed.hostname==="youtu.be"?parsed.pathname.slice(1):(parsed.searchParams.get("v")||parsed.pathname.split("/").filter(Boolean).pop());if(id)embed="https://www.youtube-nocookie.com/embed/"+encodeURIComponent(id);
-   const frame=document.createElement("iframe");frame.src=embed;frame.title=title;frame.loading="lazy";frame.allow="autoplay; encrypted-media; picture-in-picture; fullscreen";frame.referrerPolicy="no-referrer";frame.sandbox="allow-scripts allow-same-origin allow-presentation";player.append(frame);
-  }else if(type==="hls"||parsed.pathname.toLowerCase().endsWith(".m3u8")){
+  const stream=String(cam.stream_url||"");const still=String(cam.feed_url||"");const target=stream||still;
+  if(!target)throw new Error("This camera record does not provide a public stream or image URL.");
+  const parsed=new URL(target);if(!["https:","http:"].includes(parsed.protocol))throw new Error("Unsupported camera URL protocol.");
+  player.replaceChildren();
+  const type=String(cam.stream_type||"").toLowerCase();
+  if(stream&&(type==="hls"||parsed.pathname.toLowerCase().endsWith(".m3u8"))){
    const video=document.createElement("video");video.controls=true;video.playsInline=true;video.preload="none";player.append(video);
-   if(video.canPlayType("application/vnd.apple.mpegurl"))video.src=streamUrl;else{const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/hls.js@1.5.18/dist/hls.min.js";script.onload=()=>{if(window.Hls&&window.Hls.isSupported()){const hls=new window.Hls();hls.loadSource(streamUrl);hls.attachMedia(video)}else player.innerHTML="<div class='empty'>This browser cannot play this HLS stream.</div>"};script.onerror=()=>{player.innerHTML="<div class='empty'>HLS playback library could not be loaded.</div>"};document.head.append(script)}
-  }else if(type==="mjpeg"||type==="image"||/\.(mjpg|mjpeg|jpg|jpeg|png|webp)$/.test(parsed.pathname.toLowerCase())){
-   const image=document.createElement("img");image.src=streamUrl;image.alt=title+" public live feed";player.append(image);
+   if(video.canPlayType("application/vnd.apple.mpegurl"))video.src=stream;
+   else{const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/hls.js@1.6.16/dist/hls.min.js";script.onload=()=>{if(window.Hls&&window.Hls.isSupported()){const hls=new window.Hls();hls.loadSource(stream);hls.attachMedia(video)}else player.innerHTML="<div class=\"empty\">HLS playback is not supported in this browser.</div>"};script.onerror=()=>{player.innerHTML="<div class=\"empty\">HLS playback support could not be loaded.</div>"};document.head.append(script)}
+  }else if(stream&&(type==="mp4"||parsed.pathname.toLowerCase().endsWith(".mp4"))){
+   const video=document.createElement("video");video.controls=true;video.playsInline=true;video.preload="metadata";video.src=stream;player.append(video);
+  }else if(stream&&(type==="iframe"||type==="embed"||type==="youtube")){
+   const frame=document.createElement("iframe");frame.src=stream;frame.title=title;frame.loading="lazy";frame.allow="autoplay; encrypted-media; picture-in-picture; fullscreen";frame.referrerPolicy="no-referrer";frame.sandbox="allow-scripts allow-same-origin allow-presentation";player.append(frame);
   }else{
-   const frame=document.createElement("iframe");frame.src=streamUrl;frame.title=title;frame.loading="lazy";frame.allow="autoplay; encrypted-media; picture-in-picture; fullscreen";frame.referrerPolicy="no-referrer";frame.sandbox="allow-scripts allow-same-origin allow-presentation";player.append(frame);
+   const image=document.createElement("img");image.src=still||stream;image.alt=title+" public camera view";image.loading="lazy";player.append(image);
   }
-  const source=item.permalink||cam.permalink||"https://openwebcamdb.com/";$("streamAttribution").innerHTML=(cam.attribution?escapeHtml(cam.attribution)+" · ":"")+"<a href='"+escapeHtml(source)+"' target='_blank' rel='noopener'>Open original webcam page ↗</a>";
- }catch(error){$("streamPlayer").innerHTML="<div class='empty'>"+escapeHtml(error.message)+"</div>"}
+  const source=cam.external_url||"";$("streamAttribution").innerHTML=escapeHtml(cam.source||"Public camera source")+(source?" · <a href=\""+escapeHtml(source)+"\" target=\"_blank\" rel=\"noopener\">Open operator source ↗</a>":"");
+ }catch(error){player.innerHTML="<div class=\"empty\">"+escapeHtml(error.message)+"</div>"}
 }
+const webcamLayer=L.layerGroup().addTo(map);
 $("scanBtn").addEventListener("click",scan);$("radius").addEventListener("change",()=>{if(valid){scan();scanWebcams()}});
 if(!valid){$("scanStatus").textContent="Missing site coordinates. Return to the Explorer and select a mapped site.";$("scanBtn").disabled=true}
 else {scan();scanWebcams()}
