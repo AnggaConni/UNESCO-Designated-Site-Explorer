@@ -957,6 +957,22 @@ function openSite(id,zoom){
  $("#visitedPill").classList.toggle("done",state.visited.has(id));
  $("#drawerTags").innerHTML=(s.tags||[]).map(t=>"<span>"+esc(t)+"</span>").join("");
  $("#drawerDescription").textContent=s.description||"Consult the linked source record for authoritative details.";
+ const monitorButton=document.getElementById("siteMonitorBtn");
+ if(monitorButton)monitorButton.remove();
+ const monitor=document.createElement("div");
+ monitor.className="site-monitor-entry";
+ monitor.innerHTML='<a id="siteMonitorBtn" class="site-monitor-btn" href="#" aria-label="Open real-time public camera monitoring">◎ <span><strong>Monitor Realtime</strong><small>Explore public cameras within 200 km</small></span><b>↗</b></a>';
+ $("#drawerDescription").insertAdjacentElement("afterend",monitor);
+ const monitorLink=monitor.querySelector("a");
+ if(hasPoint){
+  const params=new URLSearchParams({id:s.id,name:s.name,country:s.country||"",location:s.location||"",programme:s.designation||s.programmeLabel||"",lon:String(s.coordinates[0]),lat:String(s.coordinates[1])});
+  monitorLink.href="site-monitoring.html?"+params.toString();
+ }else{
+  monitorLink.href="#";
+  monitorLink.setAttribute("aria-disabled","true");
+  monitorLink.addEventListener("click",event=>{event.preventDefault();toast("This site has no coordinates for camera monitoring yet.");});
+  monitorLink.classList.add("disabled");
+ }
  $("#drawerFacts").innerHTML='<div class="fact"><span>Designation</span><b>'+esc(s.designation||s.programmeLabel||"UNESCO programme")+'</b></div><div class="fact"><span>Year</span><b>'+esc(s.year||"Not provided")+'</b></div><div class="fact"><span>Why it matters</span><b>'+esc(s.why||"See official source record")+'</b></div><div class="fact"><span>Source detail</span><b>'+esc(s.fact||s.sourceDatasetId||"UNESCO DataHub")+'</b></div>';
  renderSiteIntelligence(s,"overview");
  renderLocalModelPicker(s);
