@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#071a24">
+<meta name="theme-color" content="#071a24"><link rel="icon" type="image/svg+xml" href="favicon.svg">
 <title>Site Monitoring · World Heritage Atlas</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -44,7 +44,7 @@ if(valid){
  L.marker([params.lat,params.lon],{title:params.name}).addTo(map).bindPopup("<strong>"+escapeHtml(params.name)+"</strong><br>Selected heritage site").openPopup();
 }
 let layer=L.layerGroup().addTo(map);
-const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function distanceKm(lat1,lon1,lat2,lon2){const r=Math.PI/180,dLat=(lat2-lat1)*r,dLon=(lon2-lon1)*r,a=Math.sin(dLat/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLon/2)**2;return 6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
 function cameraCoords(feature){const p=feature.properties||feature;const g=feature.geometry;let lon=Number(p.longitude??p.lon??(g&&g.coordinates&&g.coordinates[0])),lat=Number(p.latitude??p.lat??(g&&g.coordinates&&g.coordinates[1]));return Number.isFinite(lat)&&Number.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180?{lat,lon}:null}
 function normalizeRows(payload){if(Array.isArray(payload.features))return payload.features;if(Array.isArray(payload.data))return payload.data;if(Array.isArray(payload.cameras))return payload.cameras;if(Array.isArray(payload.data?.features))return payload.data.features;return []}
