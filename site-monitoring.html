@@ -17,11 +17,11 @@
  <div class="meta"><span class="chip" id="siteProgramme">UNESCO-designated site</span><span class="chip" id="radiusChip">Search radius · 200 km max</span><span class="chip" id="coordChip">Coordinates pending</span></div>
  <div class="controls"><label for="radius">Search radius</label><select id="radius"><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option><option value="150">150 km</option><option value="200" selected>200 km (maximum)</option></select><button class="primary" id="scanBtn">↻ Scan public camera database</button><span id="scanStatus" class="status" aria-live="polite">Preparing map…</span></div>
 </section>
-<div class="layout"><section><div id="map" aria-label="Map of the selected site and public camera records"></div><div class="legend"><span><i class="dot site"></i>Selected heritage site</span><span><i class="dot"></i>Public camera record</span></div></section>
+<div class="layout"><section><div id="map" aria-label="Map of the selected site and public camera records"></div><div class="legend"><span><i class="dot site"></i>Selected heritage site</span><span><i class="dot"></i>Public camera infrastructure record</span></div></section>
 <aside class="side">
  <section class="panel"><h2>Monitoring area</h2><div class="stats"><div class="stat"><b id="cameraCount">—</b><span>Camera records</span></div><div class="stat"><b id="radiusValue">200 km</b><span>Search radius</span></div></div><p class="status" id="coverageText">Camera records are being loaded from the public database.</p></section>
- <section class="panel"><h2>Public cameras nearby</h2><div id="cameraList" class="status">No results loaded yet.</div></section>
- <section class="panel"><h2>Data sources</h2><p class="status">OpenSurveillanceDB provides public camera location records (not necessarily live video). A record's coordinates indicate its reported camera location; availability and freshness may vary.</p><p><a href="https://opensurveillancedb.org/" target="_blank" rel="noopener">OpenSurveillanceDB ↗</a></p><p class="status">Webcam previews can be added through providers such as OpenWebcamDB or Windy with their required API credentials.</p></section>
+ <section class="panel"><h2>Public camera infrastructure records nearby</h2><div id="cameraList" class="status">No results loaded yet.</div></section>
+ <section class="panel"><h2>Data sources</h2><p class="status">OpenSurveillanceDB provides public records of visible camera infrastructure only. It does not provide video, live streams or stream URLs. A record indicates a reported camera location; availability and freshness may vary.</p><p><a href="https://opensurveillancedb.org/" target="_blank" rel="noopener">OpenSurveillanceDB ↗</a></p><p class="status">For actual public webcam video, a separate provider integration is required (for example OpenWebcamDB or Windy, subject to API credentials and terms).</p></section>
  <div class="notice">This page is for place-based situational awareness: environmental conditions, infrastructure and public-area context. It does not identify or follow individuals. Camera locations do not prove that a camera is online or that an event occurred.</div>
 </aside></div>
 <footer class="footer">Camera data: OpenSurveillanceDB · Map: © OpenStreetMap contributors · Distances are calculated from the selected site's coordinate anchor, not an official property boundary.</footer>
@@ -55,12 +55,12 @@ async function scan(){
  const dLat=radius/111.32,dLon=radius/(111.32*Math.max(.1,Math.cos(params.lat*Math.PI/180)));
  const bbox=[params.lon-dLon,params.lat-dLat,params.lon+dLon,params.lat+dLat].join(",");
  try{
-  const url="https://opensurveillancedb.org/api/cameras?bbox="+encodeURIComponent(bbox)+"&count=false";
+  const url="https://civilaegis-tinyfish-proxy.conniezz-cool.workers.dev/public-cameras?bbox="+encodeURIComponent(bbox);
   const response=await fetch(url,{headers:{Accept:"application/json"}});
   if(!response.ok)throw new Error("OpenSurveillanceDB returned HTTP "+response.status);
   const payload=await response.json(),raw=normalizeRows(payload),rows=raw.map(row=>{const coords=cameraCoords(row);if(!coords)return null;const p=row.properties||row;return {...p,...coords,distance:distanceKm(params.lat,params.lon,coords.lat,coords.lon)}}).filter(x=>x&&x.distance<=radius).sort((a,b)=>a.distance-b.distance).slice(0,500);
   rows.forEach((cam,i)=>{
-   const title=cam.title||cam.name||cam.label||("Public camera #"+(cam.id??i+1)),kind=cam.kind||cam.type||cam.mount||"Public camera record",id=cam.id;
+   const title=cam.title||cam.name||cam.label||("Public camera #"+(cam.id??i+1)),kind=cam.kind||cam.type||cam.mount||"Public camera infrastructure record",id=cam.id;
    const marker=L.circleMarker([cam.lat,cam.lon],{radius:6,color:"#087f67",weight:2,fillColor:"#0ca789",fillOpacity:.85}).addTo(layer);
    const external=id?"https://opensurveillancedb.org/cameras/"+encodeURIComponent(id):"https://opensurveillancedb.org/";
    marker.bindPopup("<strong>"+escapeHtml(title)+"</strong><br>"+escapeHtml(kind)+"<br>"+cam.distance.toFixed(1)+" km from site<br><a target='_blank' rel='noopener' href='"+external+"'>Open public record ↗</a>");
