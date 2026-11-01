@@ -138,3 +138,14 @@
 .map-stage.earth-mode #cesiumContainer .cesium-widget-credits a{color:#174f80!important}
 .map-stage.earth-mode #cesiumContainer .cesium-widget-credits img{vertical-align:middle!important}
 @media(max-width:760px){.map-stage.earth-mode #cesiumContainer .cesium-viewer-bottom{left:5px!important;bottom:5px!important;max-width:90%!important;padding:3px 5px!important}.map-stage.earth-mode #cesiumContainer .cesium-widget-credits{font-size:8px!important}.map-mode-toggle{white-space:nowrap}}
+
+/* Public camera monitoring entry in the site detail drawer */
+
+.site-monitor-entry{margin:14px 0 18px}
+.site-monitor-btn{display:flex;align-items:center;gap:12px;padding:13px 15px;border:1px solid #b9ddd1;border-radius:12px;background:linear-gradient(105deg,#effaf5,#fff);color:#08745f;text-decoration:none;transition:transform .18s,border-color .18s,box-shadow .18s}
+.site-monitor-btn:hover{transform:translateY(-1px);border-color:#71bba4;box-shadow:0 7px 22px #0b624b12}
+.site-monitor-btn>span{display:grid;gap:2px;flex:1}
+.site-monitor-btn strong{font-size:13px;letter-spacing:.01em}
+.site-monitor-btn small{font-size:11px;color:#66847b}
+.site-monitor-btn>b{font-size:18px;font-weight:500}
+.site-monitor-btn.disabled{opacity:.55;cursor:not-allowed;filter:grayscale(.5)}
